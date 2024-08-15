@@ -30,7 +30,7 @@
         (caller tx-sender))
     (if (is-none campaign)
         (err ERR_CAMPAIGN_NOT_FOUND)
-        (let ((campaign-data (unwrap campaign (err ERR_CAMPAIGN_NOT_FOUND))))
+        (let ((campaign-data (default-to { creator: tx-sender, goal: u0, raised: u0, end-block: u0, active: false } campaign)))
           (if (or (not (get active campaign-data)) (> block-height (get end-block campaign-data)))
               (err ERR_CAMPAIGN_ENDED)
               (begin
@@ -48,7 +48,7 @@
         (caller tx-sender))
     (if (is-none campaign)
         (err ERR_CAMPAIGN_NOT_FOUND)
-        (let ((campaign-data (unwrap campaign (err ERR_CAMPAIGN_NOT_FOUND))))
+        (let ((campaign-data (default-to { creator: tx-sender, goal: u0, raised: u0, end-block: u0, active: false } campaign)))
           (if (not (is-eq caller (get creator campaign-data)))
               (err ERR_UNAUTHORIZED)
               (if (or (not (get active campaign-data)) (< (get raised campaign-data) (get goal campaign-data)))
