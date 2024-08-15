@@ -23,3 +23,21 @@
           (map-set campaigns campaign-id
             { creator: caller, goal: goal, raised: u0, end-block: (+ block-height duration), active: true })
           (ok campaign-id)))))
+
+;; Function to contribute to a campaign
+(define-public (contribute (campaign-id uint) (amount uint))
+  (let ((campaign (map-get? campaigns campaign-id))
+        (caller tx-sender))
+    (if (is-none campaign)
+        (err ERR_CAMPAIGN_NOT_FOUND)
+        (let ((campaign-data (unwrap campaign (err ERR_CAMPAIGN_NOT_FOUND))))
+          (if (or (not (get active campaign-data)) (> block-height (get end-block campaign-data)))
+              (err ERR_CAMPAIGN_ENDED)
+              (begin
+                (try! (stx-transfer? amount caller (as-contract tx-sender)))
+                (map-set campaigns campaign-id
+                  { creator: (get creator campaign-data), goal: (get goal campaign-data),
+                    raised: (+ (get raised campaign-data) amount),
+                    end-block: (get end-block campaign-data), active: true })
+                (map-set contributions { campaign-id: campaign-id, contributor: caller } amount)
+                (ok true)))))))
