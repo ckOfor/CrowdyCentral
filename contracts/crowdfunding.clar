@@ -41,3 +41,23 @@
                     end-block: (get end-block campaign-data), active: true })
                 (map-set contributions { campaign-id: campaign-id, contributor: caller } amount)
                 (ok true)))))))
+
+;; Function to withdraw funds if the goal is reached
+(define-public (withdraw-funds (campaign-id uint))
+  (let ((campaign (map-get? campaigns campaign-id))
+        (caller tx-sender))
+    (if (is-none campaign)
+        (err ERR_CAMPAIGN_NOT_FOUND)
+        (let ((campaign-data (unwrap campaign (err ERR_CAMPAIGN_NOT_FOUND))))
+          (if (not (is-eq caller (get creator campaign-data)))
+              (err ERR_UNAUTHORIZED)
+              (if (or (not (get active campaign-data)) (< (get raised campaign-data) (get goal campaign-data)))
+                  (err ERR_GOAL_NOT_REACHED)
+                  (begin
+                    (var-set campaign-counter (- (var-get campaign-counter) u1))
+                    (map-set campaigns campaign-id
+                      { creator: (get creator campaign-data), goal: (get goal campaign-data),
+                        raised: (get raised campaign-data),
+                        end-block: (get end-block campaign-data), active: false })
+                    (try! (as-contract (stx-transfer? (get raised campaign-data) (as-contract tx-sender) caller)))
+                    (ok true))))))))
