@@ -61,3 +61,11 @@
                         end-block: (get end-block campaign-data), active: false })
                     (try! (as-contract (stx-transfer? (get raised campaign-data) (as-contract tx-sender) caller)))
                     (ok true))))))))
+
+;; Function to get campaign details
+(define-read-only (get-campaign (campaign-id uint))
+  (map-get? campaigns campaign-id))
+
+;; Function to get contribution amount for a user in a campaign
+(define-read-only (get-contribution (campaign-id uint) (contributor principal))
+  (ok (default-to u0 (map-get? contributions { campaign-id: campaign-id, contributor: contributor }))))
